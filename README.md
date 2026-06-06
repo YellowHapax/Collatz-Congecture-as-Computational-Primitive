@@ -1,4 +1,35 @@
-# Collatz-Congecture-as-Computational-Primitive
-This paper reframes the Collatz Conjecture not as an open problem in number theory but as a specimen of a broader computational primitive: iterative arithmetic reduction between incommensurate scales. The two branches of the Collatz map encode a fundamental tension — the even step (÷2) performs digital reduction while the odd step (3n+1) introduces analog complexity at a scale incommensurate with the binary grid. This tension is structurally identical to the Pythagorean comma in music, the successive-approximation architecture of analog-to-digital converters, and the negotiation dynamics between coupled cognitive agents in the Memory as Baseline Deviation (MBD) framework.
+# Collatz as Computational Primitive
 
-Four mechanistically distinct failure modes of inter-scale reduction are classified: the Wolf Interval (volitional refusal to temper), Truncation (compute-budget expiry), Bandwidth Mismatch (developmental capacity limitation), and True Divergence (structural non-convergence in bounded state space). The MBD coupling parameter κ is identified as a temperament selector ranging from Just Intonation (maximum local fidelity, zero modulability) to Equal Temperament (uniform error distribution, maximum global connectivity). A real-time temporal renormalization group flow is derived for the cognitive baseline, with a stability bound on inter-parameter coupling established via the Routh-Hurwitz criterion. Wisdom is defined as the capacity to perform lossy compression at the fidelity appropriate to a given channel while retaining awareness of what the compression discards.
+This repository collects versions of the working paper/framework **"Collatz as
+Computational Primitive: The Analog-Digital Interface."** The framework reframes
+Collatz-type iteration as a computational primitive for reduction between
+incommensurate scales, with analogies across number theory, musical temperament,
+signal processing, and Memory as Baseline Deviation (MBD) communication dynamics.
+
+## Version index
+
+| Version | Folder | Notes |
+|---|---|---|
+| v1 | [`versions/v1/`](versions/v1/) | Initial working paper draft. |
+| v2 | [`versions/v2/`](versions/v2/) | Revised working paper with tightened epistemic claims, corrected Conway/undecidability framing, and clearer scope notes. |
+
+The latest draft is [`versions/v2/paper.md`](versions/v2/paper.md).
+
+## Repository layout
+
+```text
+.
++-- README.md
+`-- versions/
+    +-- v1/
+    |   +-- README.md
+    |   `-- paper.md
+    `-- v2/
+        +-- README.md
+        `-- paper.md
+```
+
+## Reading order
+
+Start with v2 unless you specifically need the original formulation. Keep v1 for
+lineage and comparison; use v2 as the current canonical working-paper version.
