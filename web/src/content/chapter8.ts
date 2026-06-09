@@ -31,7 +31,7 @@ export const CHAPTER_ABSTRACT =
 export const JOURNEY_OVERVIEW: { tag: string; headline: string }[] = [
   { tag: 'A', headline: 'Sensory flood → leaky baseline' },
   { tag: 'B', headline: 'Raw input → deviation gap' },
-  { tag: 'C', headline: 'Gap → gated novelty (θ)' },
+  { tag: 'C', headline: 'Gap → novelty gate (θ_h, Γ)' },
   { tag: 'D', headline: 'Window widens → RG flow toward Θ*' },
   { tag: 'E', headline: 'Coupling ceiling → Routh–Hurwitz bound' },
   { tag: 'F', headline: 'Refuse to temper → Wolf Interval' },
@@ -87,7 +87,7 @@ export const panelContent: Record<string, PanelContent> = {
   'panel-c': {
     id: 'panel-c',
     tag: 'C',
-    label: 'The Aha',
+    label: 'Novelty Gating',
     paperSection: '§8.2 — Novelty Gating (θ_h)',
     paperExcerpt:
       'θ_h ∈ [0, 1] is the novelty-gating threshold (higher values filter more noise). As the integration window widens, variance decreases through averaging — but high complexity sensitivity (Γ) drives the agent to seek high-frequency models, effectively lowering the gate: dθ_h/dμ = a₁(θ₀ − θ_h) − k₁Γ.',
@@ -98,10 +98,10 @@ export const panelContent: Record<string, PanelContent> = {
       'Now widen the temporal window: maturation is coarse-graining in μ = ln(τ).',
     derivation: [
       'Not every gap should update the deep model — most is noise.',
-      'Introduce threshold θ: encode only when |ΔB| > θ (innovation spike / "aha").',
-      'In §8.2 this becomes θ_h, a full state variable coupled to Γ and β.',
-      'The gate is not static: complexity-seeking (Γ) pulls θ_h down; relaxation pulls it toward θ₀.',
-      'Kalman intuition: this is the innovation gate — update only when surprise exceeds measurement noise.',
+      'θ_h gates sustained |ΔB| intervals, not individual threshold crossings.',
+      'Back-to-back above-θ runs habituate: novelty decays after a committed encode.',
+      'In §8.2 θ_h couples to Γ and β; Γ lowers the gate via complexity-seeking.',
+      'What gets stored is encode duration — how long surprise stayed aloft, not bump count.',
     ],
   },
   'panel-d': {
@@ -176,8 +176,8 @@ export const panelContent: Record<string, PanelContent> = {
     fromPrevious: 'Wolf Interval is refusal — truncation is exhaustion.',
     toNext: 'Some signals need more capacity than the receiver currently has.',
     derivation: [
-      'Collatz(27) needs 111 steps — a honest signal with a long reduction trajectory.',
-      'Bounded attention = finite step budget before action.',
+      'Collatz(27) needs 111 steps — peak 9232 at step 77 before reaching 1.',
+      'Bounded attention = finite step budget N_budget before action.',
       'Stop early → act on partial reduction → wrong conclusion without anyone lying.',
       'Distinct from §8 instability: willing agent, honest signal, clock expired.',
       'Connects to Simon\'s satisficing and the paper\'s truncation economics open question.',
@@ -196,8 +196,8 @@ export const panelContent: Record<string, PanelContent> = {
     toNext: 'The hardest case: structurally no convergence at all.',
     derivation: [
       '§7.3 is why §8 exists — maturation is not metaphor, it is coarse-graining dynamics.',
-      'Horizon H (capacity) < signal complexity → clipping, not malice.',
-      'Widen capacity in the viz: same signal becomes representable.',
+      'Horizon H ≡ coarse-graining scale τ = e^μ: fast bands are out of range, not refused.',
+      'Increase μ in the viz: same I_raw becomes macro-processable (§8 maturation).',
       'Diagnostic horror: from inside, "not yet" and "impossible" look alike.',
       'RG flow in §8 is the formal answer to "how does capacity grow?"',
     ],
@@ -214,9 +214,9 @@ export const panelContent: Record<string, PanelContent> = {
     fromPrevious: 'Bandwidth mismatch resolves with maturation — Honeybadger does not.',
     toNext: 'κ parameterizes where you sit on the temperament spectrum that governs all of the above.',
     derivation: [
-      'Honeybadger: constitutional non-convergence, not refusal or immaturity.',
-      'Halting/undecidability: finite observer cannot distinguish long crawl from true divergence.',
-      'Toggle the viz: same apparent chaos, different mechanism underneath.',
+      'Honeybadger: irrational rotation on S¹ — bounded, aperiodic, no Θ*.',
+      'Masquerade: truncated Collatz(27) looks identical inside finite T_obs.',
+      'Halting shadow: no finite diagnostic reliably separates the two.',
       '§8 stable fixed point assumes a pairing that has a Θ* — Honeybadger pairings may not.',
       'Framework must account for the possibility even when rare.',
     ],

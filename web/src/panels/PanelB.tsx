@@ -1,68 +1,80 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Button } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { AreaChart, Area, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import {
+  ChartAmplitudeYAxis,
+  ChartTimeXAxis,
+  CHART_MARGIN,
+  SignalChainBadge,
+} from '@/components/chartAxes';
+import { ComposedChart, Area, Line, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { paperProps } from '@/content/chapter8';
+import { buildBaselineSeries } from '@/lib/leakyBaseline';
 
 export function PanelB() {
   const [perturbation, setPerturbation] = useState(0);
-  
-  useEffect(() => {
-    if (perturbation > 0) {
-      const timer = setTimeout(() => setPerturbation(0), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [perturbation]);
 
-  const data = useMemo(() => {
-    const lambda = 0.1;
-    let b = 0;
-    const pts = [];
-    for (let t = 0; t < 100; t++) {
-      let input = Math.sin(t * 0.1) * 3;
-      if (t > 40 && t < 45) {
-         input += perturbation * 10;
-      }
-      
-      b = b * (1 - lambda) + input * lambda;
-      const gap = Math.abs(input - b);
-      
-      // We will plot the gap as the shaded area between them. 
-      // Recharts doesn't natively shade between two generic lines easily without some tricks,
-      // so we use simple baseline and input lines, and an area for the gap.
-      // Actually better: AreaChart with range [input, b]
-      pts.push({ t, input, baseline: b, range: [Math.min(input, b), Math.max(input, b)], gap });
-    }
-    return pts;
-  }, [perturbation]);
+  const data = useMemo(
+    () => buildBaselineSeries({ perturbation }),
+    [perturbation],
+  );
+
+  const yDomain = useMemo(() => {
+    const m = Math.max(...data.flatMap((d) => [Math.abs(d.gap), Math.abs(d.raw), Math.abs(d.baseline)]), 1);
+    return [-m * 1.15, m * 1.15] as [number, number];
+  }, [data]);
 
   return (
     <PanelLayout
       id="panel-b"
-      handle="The Gap"
-      intuition={<p>Encoding doesn't care about the raw signal. It cares about the gap between what you expected (the baseline) and what happened (the input). You remember what broke prediction.</p>}
-      mathEq={<MathDisplay math="\Delta B(t) = I(t) - B(t)" />}
+      handle="Baseline Deviation"
+      intuition={
+        <p>
+          MBD encodes the gap between expectation and arrival — not the absolute input level.
+          <MathInline math="\Delta B(t)=I_{\mathrm{raw}}(t)-B(t)" /> is the innovation signal:
+          what broke the running coarse-grained model. Inject a structured perturbation and watch
+          the yellow band widen where prediction failed.
+        </p>
+      }
+      mathEq={<MathDisplay math="\Delta B(t)=I_{\mathrm{raw}}(t)-B(t)" />}
       mathGloss={
         <>
-          <p><MathInline math="\Delta B(t)" />: The deviation signal (the gap).</p>
+          <p><MathInline math="\Delta B" />: signed deviation (yellow band).</p>
+          <p>Orange: <MathInline math="I_{\mathrm{raw}}" />. Blue: leaky <MathInline math="B(t)" /> from Panel A.</p>
+          <p>Perturbation models a genuine prediction-breaking event, not ambient noise.</p>
         </>
       }
-      mbdConnection="Encoding fires on the gap, not the raw input."
+      mbdConnection="Memory fires on deviation magnitude and sign — the surprise relative to the moving baseline."
       visual={
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <XAxis dataKey="t" hide />
-            <YAxis domain={[-10, 15]} hide />
-            <Area type="monotone" dataKey="range" stroke="none" fill="#eab308" fillOpacity={0.6} isAnimationActive={false} />
-            <Line type="monotone" dataKey="input" stroke="#f97316" strokeWidth={2} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="baseline" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="w-full h-full relative">
+          <SignalChainBadge step="B" />
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data} margin={CHART_MARGIN}>
+              <ChartTimeXAxis />
+              <ChartAmplitudeYAxis domain={yDomain} />
+              <ReferenceLine y={0} stroke="#475569" strokeDasharray="2 4" />
+              <Area
+                type="monotone"
+                dataKey="gap"
+                stroke="#eab308"
+                fill="#eab308"
+                fillOpacity={0.35}
+                strokeWidth={1.5}
+                isAnimationActive={false}
+                name="ΔB"
+              />
+              <Line type="monotone" dataKey="raw" stroke="#f97316" strokeWidth={1.5} dot={false} isAnimationActive={false} opacity={0.7} name="I_raw" />
+              <Line type="monotone" dataKey="baseline" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} name="B(t)" />
+              <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       }
       controls={
-        <div className="flex justify-center">
-          <Button onClick={() => setPerturbation(0.5)}>Inject Perturbation</Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button onClick={() => setPerturbation(0.55)}>Inject prediction-breaking event</Button>
+          <Button onClick={() => setPerturbation(0)}>Clear perturbation</Button>
         </div>
       }
       {...paperProps('panel-b')}

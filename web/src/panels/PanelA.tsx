@@ -1,59 +1,81 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Slider } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import {
+  ChartAmplitudeYAxis,
+  ChartTimeXAxis,
+  CHART_MARGIN,
+  SignalChainBadge,
+} from '@/components/chartAxes';
+import { LineChart, Line, ResponsiveContainer, Legend } from 'recharts';
 import { paperProps } from '@/content/chapter8';
+import { buildRawStream, leakyIntegrate, SIGNAL_DT } from '@/lib/leakyBaseline';
 
 export function PanelA() {
-  const [lambda, setLambda] = useState(0.1);
-  const [noiseAmp, setNoiseAmp] = useState(2);
-  
+  const [lambda, setLambda] = useState(0.12);
+
   const data = useMemo(() => {
-    let b = 0;
-    const pts = [];
-    for (let t = 0; t < 100; t++) {
-      // Simulate input: a sine wave plus noise
-      const signal = Math.sin(t * 0.1) * 5;
-      const noise = (Math.random() - 0.5) * 5 * noiseAmp;
-      const input = signal + noise;
-      
-      b = b * (1 - lambda) + input * lambda;
-      
-      pts.push({ t, input, baseline: b });
-    }
-    return pts;
-  }, [lambda, noiseAmp]);
+    const raw = buildRawStream();
+    const baseline = leakyIntegrate(raw, lambda);
+    return raw.map((r, i) => ({
+      t: i * SIGNAL_DT,
+      raw: r,
+      baseline: baseline[i],
+    }));
+  }, [lambda]);
 
   return (
     <PanelLayout
       id="panel-a"
-      handle="The Leaky Integrator"
-      intuition={<p>The baseline isn't a fixed storage bank; it's a running estimate. It tracks an incoming noisy signal over time. A slow update rate (<MathInline math="\lambda" />) creates a smooth but sluggish baseline. A fast update rate chases the noise and gets jittery.</p>}
-      mathEq={<MathDisplay math="B(t+\Delta t) = B(t)(1-\lambda) + I(t)\cdot\lambda" />}
-      mathGloss={
+      handle="Coarse-Graining Kernel"
+      intuition={
+        <p>
+          <MathInline math="I_{\mathrm{raw}}(t)" /> is a multi-scale somatic stream — macro,
+          meso, and micro structure superposed. The agent cannot retain it at full bandwidth;
+          un-reinforced traces decay as <MathInline math="dM/dt=-(1/\tau)M" />, yielding the
+          exponential retention kernel. A discrete update with rate{' '}
+          <MathInline math="\lambda\propto 1/\tau" /> is the same operator in simulation time.
+        </p>
+      }
+      mathEq={
         <>
-          <p><MathInline math="B(t)" />: The baseline estimate at time t.</p>
-          <p><MathInline math="I(t)" />: The raw incoming signal.</p>
-          <p><MathInline math="\lambda" />: The update rate (how much of the new signal is incorporated).</p>
+          <MathDisplay math="K(t',\tau)=\frac{1}{\tau}e^{-t'/\tau}" />
+          <MathDisplay math="B(t+\Delta t)=B(t)(1-\lambda)+I(t)\cdot\lambda" />
         </>
       }
-      mbdConnection="The baseline is memory as accumulated deviation, not storage."
+      mathGloss={
+        <>
+          <p><MathInline math="I_{\mathrm{raw}}" />: high-frequency sensory input (orange).</p>
+          <p><MathInline math="B(t)" />: coarse-grained running estimate (blue).</p>
+          <p><MathInline math="\lambda" />: incorporation rate — low λ smooths; high λ tracks noise.</p>
+        </>
+      }
+      mbdConnection="The baseline is not storage; it is the dissipative estimate from which deviation will be measured."
       visual={
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <XAxis dataKey="t" hide />
-            <YAxis domain={[-10, 10]} hide />
-            <Line type="monotone" dataKey="input" stroke="#f97316" strokeWidth={1} dot={false} isAnimationActive={false} opacity={0.5} />
-            <Line type="monotone" dataKey="baseline" stroke="#3b82f6" strokeWidth={3} dot={false} isAnimationActive={false} />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="w-full h-full relative">
+          <SignalChainBadge step="A" />
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={CHART_MARGIN}>
+              <ChartTimeXAxis />
+              <ChartAmplitudeYAxis />
+              <Line type="monotone" dataKey="raw" stroke="#f97316" strokeWidth={1} dot={false} isAnimationActive={false} opacity={0.55} name="I_raw" />
+              <Line type="monotone" dataKey="baseline" stroke="#3b82f6" strokeWidth={2.5} dot={false} isAnimationActive={false} name="B(t)" />
+              <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       }
       controls={
-        <div className="grid grid-cols-2 gap-4">
-          <Slider label="Update rate (λ)" value={lambda} min={0.001} max={0.5} onChange={setLambda} />
-          <Slider label="Noise Amplitude" value={noiseAmp} min={0} max={4} onChange={setNoiseAmp} />
-        </div>
+        <Slider
+          label="Update rate (λ ∝ 1/τ)"
+          value={lambda}
+          min={0.02}
+          max={0.45}
+          step={0.01}
+          onChange={setLambda}
+          formatValue={(v) => v.toFixed(2)}
+        />
       }
       {...paperProps('panel-a')}
     />

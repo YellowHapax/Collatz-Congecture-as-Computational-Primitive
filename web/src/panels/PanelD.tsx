@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Slider, Toggle } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
+import { ChartAmplitudeYAxis, ChartTimeXAxis, CHART_MARGIN } from '@/components/chartAxes';
+import { LineChart, Line, ResponsiveContainer, Legend } from 'recharts';
 import { paperProps } from '@/content/chapter8';
 import { buildRgSeries, tauFromMu } from '@/lib/rgKernel';
 
@@ -65,9 +66,9 @@ export function PanelD() {
       visual={
         <div className="w-full h-full relative">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 8 }}>
-              <XAxis dataKey="t" hide />
-              <YAxis domain={[-8, 8]} hide />
+            <LineChart data={chartData} margin={CHART_MARGIN}>
+              <ChartTimeXAxis />
+              <ChartAmplitudeYAxis domain={[-8, 8]} />
               <Line type="monotone" dataKey="raw" stroke="#f97316" strokeWidth={1} dot={false} isAnimationActive={false} opacity={0.35} name="I_raw" />
               <Line type="monotone" dataKey="coarse" stroke={LINE_COLORS[0]} strokeWidth={2.5} dot={false} isAnimationActive={false} name="B(t) τ₀" />
               {showMultiple && offsets.slice(1).map((_, idx) => (

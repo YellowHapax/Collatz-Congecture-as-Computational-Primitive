@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Slider } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { ChartCentsYAxis, ChartIntervalXAxis, CHART_MARGIN } from '@/components/chartAxes';
+import { BarChart, Bar, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { paperProps } from '@/content/chapter8';
 import { PYTHAGOREAN_COMMA_CENTS, commaDistribution } from '@/lib/temperament';
 
@@ -35,9 +36,9 @@ export function PanelJ() {
       visual={
         <div className="w-full h-full relative">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 36, right: 16, bottom: 8, left: 8 }}>
-              <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#64748b' }} />
-              <YAxis domain={[0, 14]} hide />
+            <BarChart data={data} margin={{ ...CHART_MARGIN, top: 36 }}>
+              <ChartIntervalXAxis />
+              <ChartCentsYAxis />
               <Tooltip
                 contentStyle={{ background: '#0d1117', border: '1px solid #334155', fontSize: 11 }}
                 formatter={(value: number, _name, item) => [

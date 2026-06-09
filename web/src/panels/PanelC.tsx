@@ -1,69 +1,166 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Slider } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, AreaChart, Area, ComposedChart } from 'recharts';
-import { motion, AnimatePresence } from 'motion/react';
+import {
+  ChartAbsGapYAxis,
+  ChartTimeXAxis,
+  CHART_MARGIN,
+  SignalChainBadge,
+} from '@/components/chartAxes';
+import {
+  ComposedChart,
+  Area,
+  Line,
+  ResponsiveContainer,
+  ReferenceLine,
+  Legend,
+} from 'recharts';
 import { paperProps } from '@/content/chapter8';
+import { buildNoveltyGateSeries } from '@/lib/noveltyGate';
 
 export function PanelC() {
-  const [theta, setTheta] = useState(2);
-  const [kappa, setKappa] = useState(0.5);
-  
-  const data = useMemo(() => {
-    const pts = [];
-    for (let t = 0; t < 100; t++) {
-      const gap = Math.sin(t * 0.1) * 2 + Math.sin(t * 0.3) * 1.5;
-      const isOpen = Math.abs(gap) > theta;
-      pts.push({ t, gap: Math.abs(gap), isOpen });
-    }
-    return pts;
-  }, [theta]);
+  const [thetaH, setThetaH] = useState(0.35);
+  const [gamma, setGamma] = useState(0.2);
+  const [habituationTau, setHabituationTau] = useState(1.8);
 
-  const gateOpen = data.some(d => d.isOpen);
+  const result = useMemo(
+    () => buildNoveltyGateSeries({ thetaH, gamma, habituationTau }),
+    [thetaH, gamma, habituationTau],
+  );
+
+  const chartData = useMemo(
+    () =>
+      result.points.map((p) => ({
+        ...p,
+        /** Purple band: only sustained committed encode windows */
+        encodeBand: p.inCommittedEncode ? p.absGap : null,
+        /** Faint rose: above θ but habituation-suppressed */
+        suppressedBand:
+          p.aboveGate && !p.inCommittedEncode ? p.absGap * 0.35 : null,
+      })),
+    [result.points],
+  );
+
+  const yMax = useMemo(() => {
+    const m = Math.max(...result.points.map((p) => p.absGap), result.threshold);
+    return m * 1.15;
+  }, [result]);
+
+  const suppressedCount = result.episodes.length - result.committedEpisodes.length;
 
   return (
     <PanelLayout
       id="panel-c"
-      handle="The Aha"
-      intuition={<p>Not every gap matters. A threshold line (<MathInline math="\theta" />) determines what gets encoded. Below threshold, it's just noise. Above threshold, the gate opens—an innovation spike, the "aha" moment.</p>}
-      mathEq={<MathDisplay math="|\Delta B(t)| > \theta" />}
+      handle="Novelty Gating (θ_h)"
+      intuition={
+        <p>
+          Encoding is not a scatter of threshold crossings. The system commits to{' '}
+          <strong>sustained</strong> intervals where <MathInline math="|\Delta B|" /> stays above
+          the gate — the duration the line spends aloft, not how many bumps it grazes. Back-to-back
+          runs habituate: after one committed encode, novelty is suppressed until the refractory
+          window decays. Reality is irregular; equal peaks are not equally novel.
+        </p>
+      }
+      mathEq={
+        <MathDisplay math="\text{encode}(t) \Leftrightarrow |\Delta B|>\theta_{\mathrm{eff}} \;\&\;\; \mathcal{H}(t)<\mathcal{H}_{\mathrm{crit}}" />
+      }
       mathGloss={
         <>
-          <p><MathInline math="\theta" />: The novelty-gating threshold.</p>
-          <p><MathInline math="\kappa" />: Coupling parameter modulating the gate (represented conceptually here).</p>
+          <p><MathInline math="\theta_h" />: base gate (red dashed). Yellow: irregular <MathInline math="|\Delta B|" />.</p>
+          <p>Purple fill: committed encode <em>duration</em> (sustained above θ, not habituated).</p>
+          <p>Rose tint: above θ but suppressed by habituation <MathInline math="\mathcal{H}" /> after prior encode.</p>
         </>
       }
-      mbdConnection="The innovation spike is the novelty-detection event; this is the Kalman aha."
+      mbdConnection="Deep update fires on sustained innovation episodes; rapid repeats are lossy re-entries, not fresh news."
       visual={
         <div className="w-full h-full relative">
+          <SignalChainBadge step="C" />
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <XAxis dataKey="t" hide />
-              <YAxis domain={[0, 4]} hide />
-              <ReferenceLine y={theta} stroke="#ef4444" strokeDasharray="3 3" />
-              <Area type="monotone" dataKey="gap" stroke="#eab308" fill="#eab308" fillOpacity={0.2} strokeWidth={2} isAnimationActive={false} />
+            <ComposedChart data={chartData} margin={CHART_MARGIN}>
+              <ChartTimeXAxis />
+              <ChartAbsGapYAxis domain={[0, yMax]} />
+              <ReferenceLine
+                y={result.threshold}
+                stroke="#ef4444"
+                strokeDasharray="4 4"
+                label={{ value: 'θ_eff·σ', position: 'insideTopRight', fill: '#f87171', fontSize: 10 }}
+              />
+              <Area
+                type="stepAfter"
+                dataKey="absGap"
+                stroke="#eab308"
+                fill="#eab308"
+                fillOpacity={0.15}
+                strokeWidth={1.5}
+                isAnimationActive={false}
+                connectNulls
+                name="|ΔB|"
+              />
+              <Area
+                type="stepAfter"
+                dataKey="suppressedBand"
+                stroke="none"
+                fill="#fb7185"
+                fillOpacity={0.45}
+                isAnimationActive={false}
+                connectNulls={false}
+                name="suppressed"
+              />
+              <Area
+                type="stepAfter"
+                dataKey="encodeBand"
+                stroke="#a855f7"
+                fill="#a855f7"
+                fillOpacity={0.55}
+                strokeWidth={2}
+                isAnimationActive={false}
+                connectNulls={false}
+                name="encode duration"
+              />
+              <Line
+                type="monotone"
+                dataKey="threshold"
+                stroke="#ef4444"
+                strokeWidth={1}
+                dot={false}
+                isAnimationActive={false}
+                strokeDasharray="4 4"
+                name="gate"
+              />
+              <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }} />
             </ComposedChart>
           </ResponsiveContainer>
-          <AnimatePresence>
-            {gateOpen && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.2 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 border-4 border-green-500 bg-green-500/10 pointer-events-none flex items-center justify-center rounded-xl"
-              >
-                <span className="text-green-500 font-bold uppercase tracking-widest bg-gray-900 px-4 py-1 rounded">Gate Open</span>
-              </motion.div>
+          <div className="absolute bottom-1 left-12 font-mono text-[9px] text-slate-600 space-y-0.5">
+            <div>
+              {result.committedEpisodes.length} encode episode
+              {result.committedEpisodes.length !== 1 ? 's' : ''} ·{' '}
+              {result.totalEncodedDuration.toFixed(1)}s committed ·{' '}
+              {result.totalAboveDuration.toFixed(1)}s above θ total
+            </div>
+            {suppressedCount > 0 && (
+              <div className="text-rose-400/80">
+                {suppressedCount} above-θ run{suppressedCount !== 1 ? 's' : ''} habituated (back-to-back)
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
       }
       controls={
         <div className="grid grid-cols-2 gap-4">
-          <Slider label="Threshold (θ)" value={theta} min={0.5} max={3.5} onChange={setTheta} />
-          <Slider label="Coupling (κ)" value={kappa} min={0} max={1} onChange={setKappa} />
+          <Slider label="Gating threshold (θ_h)" value={thetaH} min={0.05} max={0.9} step={0.01} onChange={setThetaH} formatValue={(v) => v.toFixed(2)} />
+          <Slider label="Complexity sensitivity (Γ)" value={gamma} min={0} max={0.8} step={0.02} onChange={setGamma} formatValue={(v) => v.toFixed(2)} />
+          <div className="col-span-2">
+            <Slider
+              label="Habituation decay τ_hab (s)"
+              value={habituationTau}
+              min={0.4}
+              max={4}
+              step={0.1}
+              onChange={setHabituationTau}
+              formatValue={(v) => `${v.toFixed(1)}s`}
+            />
+          </div>
         </div>
       }
       {...paperProps('panel-c')}

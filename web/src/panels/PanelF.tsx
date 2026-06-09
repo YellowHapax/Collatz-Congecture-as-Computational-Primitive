@@ -3,15 +3,20 @@ import { PanelLayout } from '@/components/PanelLayout';
 import { Slider, Toggle, Button } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
 import {
+  ChartCentsYAxis,
+  ChartExchangeXAxis,
+  ChartIntervalXAxis,
+  CHART_MARGIN_COMPACT,
+} from '@/components/chartAxes';
+import {
   BarChart,
   Bar,
   Line,
   ComposedChart,
-  XAxis,
-  YAxis,
   ResponsiveContainer,
   Cell,
   ReferenceLine,
+  Legend,
 } from 'recharts';
 import { paperProps } from '@/content/chapter8';
 import {
@@ -76,9 +81,9 @@ export function PanelF() {
         <div className="w-full h-full flex flex-col gap-3 p-2">
           <div className="flex-1 min-h-[140px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={distribution} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-                <XAxis dataKey="label" tick={{ fontSize: 8, fill: '#64748b' }} interval={1} />
-                <YAxis domain={[0, 14]} hide />
+              <BarChart data={distribution} margin={CHART_MARGIN_COMPACT}>
+                <ChartIntervalXAxis />
+                <ChartCentsYAxis />
                 <Bar dataKey="error" isAnimationActive={false} name="cents (norm.)">
                   {distribution.map((entry) => (
                     <Cell
@@ -90,17 +95,18 @@ export function PanelF() {
               </BarChart>
             </ResponsiveContainer>
             <p className="text-[9px] text-center text-slate-500 font-mono -mt-1">
-              Error per fifth after full circle (¢ ≈ {unitsToCents(1).toFixed(2)} per unit)
+              Comma distribution after one circle · κ = {temper ? kappa.toFixed(2) : '0 (JI)'}
             </p>
           </div>
           <div className="flex-1 min-h-[120px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={history} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-                <XAxis dataKey="exchange" hide />
-                <YAxis domain={[0, 14]} hide />
-                <ReferenceLine y={12} stroke="#ef4444" strokeDasharray="4 4" />
-                <Bar dataKey="wolfSpike" fill="#ef4444" isAnimationActive={false} opacity={0.9} />
-                <Line type="monotone" dataKey="debt" stroke="#eab308" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <ComposedChart data={history} margin={CHART_MARGIN_COMPACT}>
+                <ChartExchangeXAxis />
+                <ChartCentsYAxis />
+                <ReferenceLine y={12} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Wolf dump', fill: '#f87171', fontSize: 9 }} />
+                <Bar dataKey="wolfSpike" fill="#ef4444" isAnimationActive={false} opacity={0.9} name="Wolf spike" />
+                <Line type="monotone" dataKey="debt" stroke="#eab308" strokeWidth={2} dot={false} isAnimationActive={false} name="debt" />
+                <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'monospace' }} />
               </ComposedChart>
             </ResponsiveContainer>
             <p className="text-[9px] text-center text-slate-500 font-mono -mt-1">

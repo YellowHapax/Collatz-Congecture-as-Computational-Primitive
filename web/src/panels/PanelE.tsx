@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { PanelLayout } from '@/components/PanelLayout';
 import { Slider } from '@/components/controls';
 import { MathDisplay, MathInline } from '@/components/MathBlock';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
+import { ChartMuXAxis, ChartXiYAxis, CHART_MARGIN } from '@/components/chartAxes';
+import { LineChart, Line, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
 import { paperProps } from '@/content/chapter8';
 import {
@@ -69,9 +70,9 @@ export function PanelE() {
           style={{ borderColor: rh.stable ? '#22c55e40' : '#ef444440' }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 8 }}>
-              <XAxis dataKey="mu" hide />
-              <YAxis domain={yDomain} hide />
+            <LineChart data={data} margin={CHART_MARGIN}>
+              <ChartMuXAxis />
+              <ChartXiYAxis domain={yDomain} />
               <Line type="monotone" dataKey="theta_h" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} name="θ_h" />
               <Line type="monotone" dataKey="beta" stroke="#eab308" strokeWidth={2} dot={false} isAnimationActive={false} name="β" />
               <Line type="monotone" dataKey="gamma" stroke="#f97316" strokeWidth={2} dot={false} isAnimationActive={false} name="Γ" />
