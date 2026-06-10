@@ -11,7 +11,7 @@ signal processing, and Memory as Baseline Deviation (MBD) communication dynamics
 
 ## Live site (GitHub Pages)
 
-**[https://yellowhapax.github.io/Collatz-Congecture-as-Computational-Primitive/](https://yellowhapax.github.io/Collatz-Congecture-as-Computational-Primitive/)**
+**[https://yellowhapax.github.io/Collatz-Conjecture-as-Computational-Primitive/](https://yellowhapax.github.io/Collatz-Conjecture-as-Computational-Primitive/)**
 
 Interactive **Chapter 8 Tutor** — A→Z explainer for §8 *Cognitive Renormalization Group Flow*: paper excerpts, derivation steps, and simulations (Routh–Hurwitz bound, failure modes, κ temperament).
 
